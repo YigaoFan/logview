@@ -10,22 +10,11 @@
 		"Other"
 	],
 	"activationEvents": [
-		"*",
-		"onCommand:logview.helloWorld",
-		"onCommand:logview.currentDate",
 		"onCommand:logview.dogCoding.start"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
-			{
-				"command": "logview.helloWorld",
-				"title": "Hello World"
-			},
-			{
-				"command": "logview.currentDate",
-				"title": "Current Date"
-			},
 			{
 				"command": "logview.dogCoding.start",
 				"title": "Dog coding"
