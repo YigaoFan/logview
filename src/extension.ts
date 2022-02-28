@@ -1,51 +1,101 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
+import { Template } from './template';
+import { log } from './utils';
+import {AnalyzeResultProvider, Item as AnalyzeResultItem} from './AnalyzeResultProvider';
 
-const log = console.log.bind(console);
-
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+// TODO change cmd to log view
+// TODO fix: invoke by .log file extension only triggered at first time
+// mouse hover open details
+// request, response 匹配和超时检测
+// 搜索功能很重要
 export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
 	// This line of code will only be executed once when your extension is activated
 	log('Congratulations, your extension "logview" is now active!');
 
+	const p = new AnalyzeResultProvider('Hello Tree view');
+	vscode.window.registerTreeDataProvider(
+		'logAnalyze',
+		p,
+	);
+	log('tree view create');
+	const refreshCmd = 'logAnalyze.refresh';
+	const refresh = () => {
+		log('start refresh');
+	};
+	const gotoCmd = 'logAnalyze.goHere';
+	const goto = (item: AnalyzeResultItem) => {
+		log('offset', item);
+	};
+	vscode.commands.registerCommand(refreshCmd, refresh);
+	vscode.commands.registerCommand(gotoCmd, goto);
 	const cmd = 'logview.dogCoding.start';
-	let disp2 = vscode.commands.registerCommand(cmd, () => {
-		const panel = vscode.window.createWebviewPanel(
-			'logView',
-			'Log View',
-			vscode.ViewColumn.Two,
-			{
-				enableScripts: true,
-			}
-		);
+	const openLogWebview = () => {
+		// const panel = vscode.window.createWebviewPanel(
+		// 	'logView',
+		// 	'Log View',
+		// 	vscode.ViewColumn.Two,
+		// 	{
+		// 		enableScripts: true,
+		// 	}
+		// );
+		// const filePath: vscode.Uri = vscode.Uri.file(path.join(context.extensionPath, 'src', 'view.html'));
+		// const template = new Template(filePath);
+		// const g = getCurrentFileContent();
+		// panel.webview.html = template.generateWith(g);
+		// log('webview set done');
+	};
+	let disp = vscode.commands.registerCommand(cmd, openLogWebview);
+	// const bar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+	// bar.command = cmd;
+	// bar.text = 'Log view';
+	// bar.show();
+	// openLogWebview();
+	// context.subscriptions.push(bar);
+	context.subscriptions.push(disp);
 
-		panel.webview.html = getWebviewContent(context.extensionPath, 'codingCat');
-	});
-	const bar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-	bar.command = cmd;
-	bar.text = 'Hello bar';
-	bar.show();
-	context.subscriptions.push(bar);
-	context.subscriptions.push(disp2);
-	context.extensionPath
+	// let disp1 = vscode.commands.registerCommand('logview.myFormatJson', formatJson);
+	// context.subscriptions.push(disp1);
 }
 
-const cats = {
-	'codingCat': 'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif',
-	'compilingCat': 'https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif',
-	'testingCat': 'https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif',
-};
-
-function getWebviewContent(extensionPath : string, cat: keyof typeof cats) {
-	const filePath: vscode.Uri = vscode.Uri.file(path.join(extensionPath, 'src', 'view.html'));
-	return fs.readFileSync(filePath.fsPath, 'utf8');
+function* getCurrentFileContent() {
+	const editor = vscode.window.activeTextEditor;
+	if (editor) {
+		const n = editor.document.lineCount;
+		for (let i = 0; i < n; i++) {
+			const line = editor.document.lineAt(i);
+			yield line;
+		}
+	}
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() { }
+
+// add log
+async function formatJson() {
+	const editor = vscode.window.activeTextEditor;
+	if (editor) {
+		log('format start');
+		const uri = editor.document.uri;
+		// editor.document.languageId
+		const r = new vscode.Range(editor.selection.start, editor.selection.end);
+		const options: Object = {
+		};
+		await vscode.languages.setTextDocumentLanguage(editor.document, 'json');
+		vscode.commands.executeCommand<vscode.TextEdit[]>('vscode.executeFormatRangeProvider', uri, r, options).then((edits) => {
+			if (!edits || !edits.length) {
+				log('format failed');
+				return;
+			}
+			const formattingEdit = new vscode.WorkspaceEdit();
+			formattingEdit.set(uri, edits);
+			vscode.workspace.applyEdit(formattingEdit);
+			log('format applied');
+		}, 
+		(reason) => {
+			log('format fail', reason);
+		});
+		
+	}
+}

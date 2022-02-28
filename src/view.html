@@ -34,29 +34,81 @@
 	</style>
 </head>
 <body>
-	<div class="couple">
-		<details close class="request">
-			<summary class="request-header">request</summary>
-			<div class="content">
-				<pre class="request-json">{ "a" : 1 }</code>
-			</div>
-		</details>
-		<details close class="response">
-			<summary class="response-header">response</summary>
-			<div class="content">
-				<pre class="response-json">{ "a" : 1 }</code>
-			</div>
-		</details>
-	</div>
+	<span style="color:black"></span>
+	{{data}}
 	<script>
         const log = console.log.bind(console)
+		const generateIndent = function (countOfItem) {
+				var indent = ''
+				var space = '&nbsp&nbsp'
+				for (var i = 0; i < countOfItem; i++) {
+					indent += space // with replace html space TODO
+				}
+				return indent
+		}
+		const formatBorkenJson = function(json) {
+				var formatted = ''
+				var indent = 0
+				var isNewline = true
+
+				// indent must be generated after <br>
+				for (var i = 0; i < json.length; i++) {
+					if (isNewline) {
+						formatted += generateIndent(indent)
+						isNewline = false
+					}
+					const c = json[i]
+					switch (c) {
+						case '{':
+						case '[':
+							formatted += c
+							formatted += '<br>'
+							indent += 1
+							isNewline = true
+							break
+						case '}':
+						case ']':
+							formatted += '<br>'
+							indent -= 1
+							formatted += generateIndent(indent)
+							formatted += c
+							formatted += '<br>'
+							isNewline = true
+							break
+						case ',':
+							formatted += c
+							formatted += '<br>'
+							isNewline = true;
+							break
+						default:
+							formatted += c
+							break
+					}
+				}
+
+				return formatted
+			}
 		var codes = document.getElementsByTagName('pre')
 		for (var i = 0; i < codes.length; ++i) {
 			var b = codes[i]
-            var j = JSON.stringify(JSON.parse(b.innerText), null, 4)
-            log('format json', j)
-			b.innerText = j
-			hljs.highlightBlock(b)
+			var json = b.innerText
+			try {
+				var j = JSON.parse(json)
+				if (j.data?._msgType) {
+					var t = j.data._msgType
+					// log('got msg type', t)
+					title = b.parentElement.parentElement.getElementsByTagName('summary')[0]
+					title.innerText = title.innerText + ' ' + t
+					// log('title after change', title.innerText, title)
+				}
+				var s = JSON.stringify(j, null, 4)
+				b.innerText = s
+				hljs.highlightBlock(b)
+				// log('format json', s)
+			} catch (error) {
+				// log('stringify failed', error)
+				b.innerHTML = formatBorkenJson(json)
+			}
 		}
 		console.log('highlight done', codes.length)
 	</script>

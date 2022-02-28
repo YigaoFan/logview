@@ -10,16 +10,75 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:logview.dogCoding.start"
+		"onCommand:logview.dogCoding.start",
+		"onLanguage:log",
+		"onView:logAnalyze"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "LogResult",
+					"title": "Log Result",
+					"icon": "resource/content.png"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "logview.dogCoding.start",
 				"title": "Dog coding"
+			},
+			{
+				"command": "logview.myFormatJson",
+				"title": "my format json"
+			},
+			{
+				"command": "logAnalyze.refresh",
+				"title": "Refresh",
+				"icon": "resource/refresh.svg"
+			},
+			{
+				"command": "logAnalyze.goHere",
+				"title": "go here",
+				"icon": "resource/edit.svg"
 			}
-		]
+		],
+		"languages": [
+			{
+				"id": "log",
+				"extensions": [
+					".log"
+				]
+			}
+		],
+		"views": {
+			"LogResult":[
+				{
+					"id": "logAnalyze",
+					"name": "Log Analyze",
+					"contextualTitle": "Analyze result",
+					"icon": "resource/content.png"
+				}
+			]
+		},
+		"menus": {
+			"view/title": [
+				{
+					"command": "logAnalyze.refresh",
+					"when": "view == logAnalyze",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "logAnalyze.goHere",
+					"when": "view == logAnalyze",
+					"group": "inline"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
