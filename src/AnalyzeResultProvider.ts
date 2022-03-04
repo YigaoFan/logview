@@ -54,7 +54,7 @@ export class AnalyzeResultProvider implements vscode.TreeDataProvider<AnalyzeRes
     }
 
     async getChildren(element?: AnalyzeResultItem): Promise<AnalyzeResultItem[] | null | undefined> {
-        log('get children of', element);
+        // log('get children of', element);
         if (element) {
             const items = this.mResultSet.get(element.kind);
             return Promise.resolve(items);
@@ -75,7 +75,6 @@ export class AnalyzeResultProvider implements vscode.TreeDataProvider<AnalyzeRes
 
     private add(result: AnalyzeResultItem): void {
         const k = result.kind;
-        log('has', this.mResultSet.has); // 为什么这里是 null
         if (this.mResultSet.has(k)) {
             this.mResultSet.get(k)!.push(result);
         } else {
