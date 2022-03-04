@@ -1,4 +1,5 @@
 export const log = console.log.bind(console);
+
 const generateIndent = function(countOfItem: number) {
     var indent = '';
     var space = '&nbsp&nbsp&nbsp&nbsp';
@@ -51,3 +52,10 @@ export const formatBorkenJson = function(json: string) {
 
     return formatted;
 };
+
+export type JSONValue = 
+            | string
+            | number
+            | boolean
+            | { [x: string]: JSONValue}
+            | Array<JSONValue>;

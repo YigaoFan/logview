@@ -10,12 +10,17 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:logview.dogCoding.start",
 		"onLanguage:log",
 		"onView:logAnalyze"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"viewsWelcome": [
+			{
+				"view": "logAnalyze",
+				"contents": "No valid log file opened"
+			}
+		],
 		"viewsContainers": {
 			"activitybar": [
 				{
@@ -26,14 +31,6 @@
 			]
 		},
 		"commands": [
-			{
-				"command": "logview.dogCoding.start",
-				"title": "Dog coding"
-			},
-			{
-				"command": "logview.myFormatJson",
-				"title": "my format json"
-			},
 			{
 				"command": "logAnalyze.refresh",
 				"title": "Refresh",
@@ -58,8 +55,7 @@
 				{
 					"id": "logAnalyze",
 					"name": "Log Analyze",
-					"contextualTitle": "Analyze result",
-					"icon": "resource/content.png"
+					"contextualTitle": "Analyze result"
 				}
 			]
 		},
