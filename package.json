@@ -4,6 +4,7 @@
 	"description": "make log visual",
 	"version": "0.0.2",
 	"publisher": "freeman",
+	"icon": "resource/logo.png",
 	"repository": {
 		"url": "https://github.com/YigaoFan/logview"
 	},
