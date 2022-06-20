@@ -3,6 +3,10 @@
 	"displayName": "LogView",
 	"description": "make log visual",
 	"version": "0.0.1",
+	"publisher": "freeman",
+	"repository": {
+		"url": "https://github.com/YigaoFan/logview"
+	},
 	"engines": {
 		"vscode": "^1.54.0"
 	},
@@ -39,7 +43,7 @@
 			{
 				"command": "logAnalyze.goHere",
 				"title": "go here",
-				"icon": "resource/edit.svg"
+				"icon": "resource/go.svg"
 			}
 		],
 		"languages": [
