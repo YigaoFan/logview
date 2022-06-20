@@ -2,7 +2,7 @@
 	"name": "logview",
 	"displayName": "LogView",
 	"description": "make log visual",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"publisher": "freeman",
 	"icon": "resource/logo.png",
 	"repository": {
