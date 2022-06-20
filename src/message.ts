@@ -15,7 +15,6 @@ export class Message {
     private mMessageType: MessageType;
     private mContent: JSONValue;
 
-    
     private static isRequest(message: string) {
         return message.includes('[request]');
     }
@@ -53,6 +52,14 @@ export class Message {
 
     public get type() {
         return this.mMessageType;
+    }
+
+    public get typeString() {
+        switch (this.mMessageType) {
+            case MessageType.request: return 'request';
+            case MessageType.response: return 'response';
+            default: throw new Error(`Not handle ${this.mMessageType} in MessageType`);
+        }
     }
 
     public get content() {

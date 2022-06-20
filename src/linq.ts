@@ -18,9 +18,18 @@ const forEach = function<T1>(t1s: Generator<T1>, func: (t1: T1)=> void): void {
     }
 };
 
+const toArray = function<T1>(t1Gen: Generator<T1>): T1[] {
+    let ts = [];
+    for (const v of t1Gen) {
+        ts.push(v);
+    }
+    return ts;
+};
+
 export const from = <T>(gen: Generator<T>) => ({
     filter: (pred: (t: T)=> boolean) => from(filter(gen, pred)),
     map: <T1>(fun: (t: T)=> T1) => from(map(gen, fun)),
     forEach: (fun: (t: T)=> void) => forEach(gen, fun),
+    toArray: () => toArray(gen),
     raw: () => gen,
 });
