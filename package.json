@@ -2,7 +2,7 @@
 	"name": "logview",
 	"displayName": "LogView",
 	"description": "make log visual",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "freeman",
 	"repository": {
 		"url": "https://github.com/YigaoFan/logview"
@@ -55,7 +55,7 @@
 			}
 		],
 		"views": {
-			"LogResult":[
+			"LogResult": [
 				{
 					"id": "logAnalyze",
 					"name": "Log Analyze",
