@@ -83,8 +83,11 @@ export class Message {
 
     private static splitOutJsonFrom(line: string) {
         const start = line.indexOf('{');
-        const end = line.lastIndexOf('Func=');
-        var s = line.substring(start, end);
+        const end = line.lastIndexOf('}');
+        if (end === -1) {
+            return '';
+        }
+        var s = line.substring(start, end + 1);
         // log('raw', s);
         // s = s.replaceAll('<', '&lt').replaceAll('>', '&gt').replaceAll('"', '&quot'); // for generate HTML
         // log('processed', s);
