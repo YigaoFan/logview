@@ -74,6 +74,7 @@ class PairCheckPattern implements IPattern {
         }
     }
 }
+// TODO json 解析有问题的时候提示可能出错
 
 patterns.push(new TimeoutCheckPattern(), new PairCheckPattern());
 

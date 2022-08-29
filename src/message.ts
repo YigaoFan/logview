@@ -1,4 +1,5 @@
 import { TextLine } from "vscode";
+import { Operator } from "./QueryExecutor";
 import { log, JSONValue } from "./utils";
 
 export enum MessageType {
@@ -14,6 +15,7 @@ export class Message {
     private mLineNum: number;
     private mMessageType: MessageType;
     private mContent: JSONValue;
+    private mLog: string;
 
     private static isRequest(message: string) {
         return message.includes('[request]');
@@ -27,16 +29,20 @@ export class Message {
         return this.isRequest(message) || this.isResponse(message);
     }
 
+    public static getQueryableFieldNames(): string[] {
+        return ['messageType', 'content'];
+    }
+
     public static newFrom(line: TextLine): Message {
         const l = line;
         if (Message.isRequest(l.text)) {
             const request:string = Message.splitOutJsonFrom(l.text);
             const time = Message.splitOutTime(l.text);
-            return new Message(time, l.lineNumber, MessageType.request, request);
+            return new Message(time, l.lineNumber, MessageType.request, request, l.text);
         } else if (Message.isResponse(l.text)) {
             const response:string = Message.splitOutJsonFrom(l.text);
             const time = Message.splitOutTime(l.text);
-            return new Message(time, l.lineNumber, MessageType.response, response);
+            return new Message(time, l.lineNumber, MessageType.response, response, l.text);
         }
 
         throw new Error(`Not support message ${line}`);
@@ -65,6 +71,51 @@ export class Message {
     public get content() {
         return this.mContent;
     }
+
+    public queryMessageType(): string | undefined {
+        try {
+            const t = JSON.parse(this.content as string).data._msgType as string;
+            return t;
+        } catch (e) {
+            return undefined;
+        }
+    }
+
+    public verify(fieldName: string, operator: Operator, value: string): boolean {
+        switch (fieldName) {
+            case 'messageType':// _msgType in message
+                let t: string;
+                try {
+                    t = JSON.parse(this.content as string).data._msgType as string;
+                } catch (e) {
+                    log(`parse failed of ${this.content}`, e);
+                    return false;
+                }
+                switch (operator) {
+                    case Operator.equal:
+                        return t === value;
+                    case Operator.notEqual:
+                            return t !== value;
+                    case Operator.contains:
+                        return t.includes(value);
+                }
+            case 'content':
+                const c = this.content as string;
+                switch (operator) {
+                    case Operator.equal:
+                        return c === value;
+                    case Operator.notEqual:
+                        return c !== value;
+                    case Operator.contains:
+                        return c.includes(value);
+                }
+        }
+        throw new Error(`Not support field query: ${fieldName}`);
+    }
+
+    public get fullLog(): string {
+        return this.mLog;
+    }
     
     // private isRequest() {
     //     return this.mMessageType === MessageType.request;
@@ -74,11 +125,12 @@ export class Message {
     //     return this.mMessageType === MessageType.response;
     // }
 
-    constructor(time: Date, line: number, type: MessageType, content: JSONValue) {
+    constructor(time: Date, line: number, type: MessageType, content: JSONValue, log: string) {
         this.mTime = time;
         this.mLineNum = line;
         this.mMessageType = type;
         this.mContent = content;
+        this.mLog = log;
     }
 
     private static splitOutJsonFrom(line: string) {

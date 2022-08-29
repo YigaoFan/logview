@@ -3,7 +3,6 @@ import * as path from 'path';
 import { log } from './utils';
 import { IPattern } from './pattern';
 import { Message } from './message';
-import { from } from './linq';
 
 export class AnalyzeResultItem extends vscode.TreeItem {
     private mLineNum: number|undefined;
@@ -38,13 +37,13 @@ type ResultKind = string;
 export class AnalyzeResultProvider implements vscode.TreeDataProvider<AnalyzeResultItem> {
     private readonly mResultSet: Map<ResultKind, AnalyzeResultItem[]>;
     private readonly mPatterns: IPattern[];
-    private readonly mLinesGetter: ()=> Generator<vscode.TextLine>;
+    private readonly mMessagesGetter: ()=> Generator<Message>;
     private _onDidChangeTreeData: vscode.EventEmitter<AnalyzeResultItem | undefined | void> = new vscode.EventEmitter();
     
-    constructor(patterns: IPattern[], linesGetter: ()=> Generator<vscode.TextLine>) {
+    constructor(patterns: IPattern[], messagesGetter: ()=> Generator<Message>) {
         this.mResultSet = new Map();
         this.mPatterns = patterns;
-        this.mLinesGetter = linesGetter;
+        this.mMessagesGetter = messagesGetter;
     }
 
     onDidChangeTreeData: vscode.Event<void | AnalyzeResultItem | null | undefined> | undefined = this._onDidChangeTreeData.event;
@@ -53,7 +52,7 @@ export class AnalyzeResultProvider implements vscode.TreeDataProvider<AnalyzeRes
         return element;
     }
 
-    async getChildren(element?: AnalyzeResultItem): Promise<AnalyzeResultItem[] | null | undefined> {
+    getChildren(element?: AnalyzeResultItem): Promise<AnalyzeResultItem[] | null | undefined> {
         // log('get children of', element);
         if (element) {
             const items = this.mResultSet.get(element.kind);
@@ -61,7 +60,7 @@ export class AnalyzeResultProvider implements vscode.TreeDataProvider<AnalyzeRes
         } else {
             // 开始工作
             this.mResultSet.clear();
-            await this.analyze(this.mLinesGetter(), this.mPatterns);
+            this.analyze(this.mMessagesGetter(), this.mPatterns);
 
             const kinds = this.mResultSet.keys();
             const items = [];
@@ -86,10 +85,11 @@ export class AnalyzeResultProvider implements vscode.TreeDataProvider<AnalyzeRes
         this._onDidChangeTreeData.fire();
     }
 
-    async analyze(g: Generator<vscode.TextLine>, patterns: IPattern[]) {
-		const ms = from(g).filter(x => Message.valid(x.text)).map(x => Message.newFrom(x));
-		patterns.forEach(x => x.resultPutter = this.add.bind(this));
-		ms.forEach(m => patterns.forEach(p => p.check(m)));
+    analyze(ms: Generator<Message>, patterns: IPattern[]) {
+        patterns.forEach(x => x.resultPutter = this.add.bind(this));
+        for (const m of ms) {
+            patterns.forEach(p => p.check(m));
+        }
 	};
 }
 

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Query</title>
+</head>
+
+<body>
+    <template id="id-clause-template">
+        <!-- 这个 template 由外面生成 -->
+        <div>
+            <select name="combinator">
+            </select>
+            <select name="field">
+            </select>
+            <select name="operator">
+            </select>
+            <input name="value" type="text" list="" 
+                        placeholder="value" style="width: 60px;"/>
+            <datalist name="valueOptions" id="">
+            </datalist>
+        </div>
+        <p></p>      
+    </template>
+    <button onclick="runQuery()" type="button">Run Query</button>
+    <p></p>
+    <div id="id-clause-group">
+    </div>
+    <p><button style="border: none;" onclick="addClause()">➕</button></p>
+    <script src="{dataBindingFilePath}"></script>
+    <script>
+        var selectMetadata = {selectMetadata}
+        var clauseCount = 0;
+        const log = console.log.bind(console)
+        var vscode = acquireVsCodeApi()
+        const addClause = function() {
+            var t = document.getElementById('id-clause-template')
+            var g = document.getElementById('id-clause-group')
+            var newItem = document.importNode(t.content, true)
+            var clause = newItem.children[0] // 0 is the div item
+            clause.id = 'id-clause' + clauseCount
+            var child = clause.children
+            child.valueOptions.id = 'id-valueOptions' + clauseCount
+            child.value.setAttribute('list', child.valueOptions.id)
+//             var metadata = {
+//     combinator: ['and', 'or'],
+//     clause: {
+//         messageType: {
+//             '=': ['A', 'B'],
+//             '!=': ['A', 'B'],
+//             'contains': []
+//         },
+//         messageContent: {
+//             '=': ['A', 'B'],
+//             '!=': ['A', 'B'],
+//             'contains': []
+//         },
+//     }
+// }
+            bind3SelectsLinkage(selectMetadata, child.combinator, child.field, child.operator, child.valueOptions)
+            
+            if (clauseCount == 0) {
+                clause.children.combinator.disabled = true
+                clause.children.combinator.style = "visibility: hidden;"
+            }
+            ++clauseCount
+            g.appendChild(newItem)
+            // log('clause added')
+        }
+        const runQuery = function() {
+            // collect data
+            clauseGroup = document.getElementById('id-clause-group')
+            var clauseGroupChildren = Array.from(Array(clauseGroup.children.length)).map((_, i) => clauseGroup.children.item(i))
+            var clauses = clauseGroupChildren.filter(x => x.tagName == 'DIV' && x.id.includes('id-clause'))
+            // HtmlCollection 支持下面这种 .combinator 写法
+            var combinators = clauses.map(x => x.children.combinator).filter(x => !x.disabled).map(valueOfSelect)
+            var clauses = clauses.map(x => [valueOfSelect(x.children.field), valueOfSelect(x.children.operator), x.children.value.value])
+            log('combinators', combinators, 'clauses', clauses)
+            // send data
+            vscode.postMessage({
+                command: 'runQuery',
+                combinators: combinators,
+                clauses: clauses,
+            })
+        }
+
+        const __main = function() {
+            addClause()
+        }
+        __main()
+    </script>
+</body>
+
+</html>

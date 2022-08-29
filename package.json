@@ -30,8 +30,13 @@
 			"activitybar": [
 				{
 					"id": "LogResult",
-					"title": "Log Result",
-					"icon": "resource/content.png"
+					"title": "Log issue items",
+					"icon": "resource/content.svg"
+				},
+				{
+					"id": "LogQuery",
+					"title": "Log Query",
+					"icon": "resource/query.svg"
 				}
 			]
 		},
@@ -61,6 +66,13 @@
 					"id": "logAnalyze",
 					"name": "Log Analyze",
 					"contextualTitle": "Analyze result"
+				}
+			],
+			"LogQuery": [
+				{
+					"type": "webview",
+					"id": "logQueryWebView",
+					"name": "LogQuery"
 				}
 			]
 		},

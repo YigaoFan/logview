@@ -31,5 +31,5 @@ export const from = <T>(gen: Generator<T>) => ({
     map: <T1>(fun: (t: T)=> T1) => from(map(gen, fun)),
     forEach: (fun: (t: T)=> void) => forEach(gen, fun),
     toArray: () => toArray(gen),
-    raw: () => gen,
+    raw: gen,
 });
