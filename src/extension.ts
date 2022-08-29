@@ -29,9 +29,14 @@ export function activate(context: vscode.ExtensionContext) {
 	// 加一个配置时长的选项
 	log('Congratulations, your extension "logview" is now active!');
 	const templatePath = path.join(context.extensionPath, 'resource', 'panel.html');
+	const styleUris = {
+		main: path.join(context.extensionPath, 'resource', 'media', 'main.css'),
+		vscode: path.join(context.extensionPath, 'resource', 'media', 'vscode.css'),
+		reset: path.join(context.extensionPath, 'resource', 'media', 'reset.css'),
+	};
 	const dataBindingPath = path.join(context.extensionPath, 'resource', 'dataBinding.js');
 	vscode.window.registerWebviewViewProvider('logQueryWebView', 
-		new QueryPanel(templatePath, dataBindingPath, new QueryExecutor(), getCurrentFileMessages, showFilteredMessage), 
+		new QueryPanel(templatePath, styleUris, dataBindingPath, new QueryExecutor(), getCurrentFileMessages, showFilteredMessage), 
 		{
 			webviewOptions: {
 				retainContextWhenHidden: true,

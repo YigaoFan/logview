@@ -51,15 +51,18 @@ const generateSelectMetadata = function(messages: Generator<Message>) {
     return metadata;
 };
 
+export type StyleUris = { main: string, vscode: string, reset: string, };
 export class QueryPanel implements WebviewViewProvider {
     private mHtmlTemplatePath: string;
     private mDataBindingFilePath: string;
     private mQueryExecutor: QueryExecutor;
     private mMessagesGetter: ()=> Generator<Message>;
     private mContinuation: (msgs: Generator<Message>) => void;
+    private mStyleUris: StyleUris;
 
-    public constructor(htmlTemplatePath: string,dataBindingFilePath: string, queryExecutor: QueryExecutor, messagesGetter: ()=> Generator<Message>, continuation: (msgs: Generator<Message>) => void) {
+    public constructor(htmlTemplatePath: string, styleUris: StyleUris, dataBindingFilePath: string, queryExecutor: QueryExecutor, messagesGetter: ()=> Generator<Message>, continuation: (msgs: Generator<Message>) => void) {
         this.mHtmlTemplatePath = htmlTemplatePath;
+        this.mStyleUris = styleUris;
         this.mDataBindingFilePath = dataBindingFilePath;
         this.mQueryExecutor = queryExecutor;
         this.mMessagesGetter = messagesGetter;
@@ -90,6 +93,9 @@ export class QueryPanel implements WebviewViewProvider {
         const d = generateSelectMetadata(this.mMessagesGetter());
         const webview = webviewView.webview;
         webview.html = fs.readFileSync(this.mHtmlTemplatePath, 'utf8')
+            .replace('{styleResetUri}', webview.asWebviewUri(vscode.Uri.file(this.mStyleUris.reset)).toString())
+            .replace('{styleVSCodeUri}', webview.asWebviewUri(vscode.Uri.file(this.mStyleUris.vscode)).toString())
+            .replace('{styleMainUri}', webview.asWebviewUri(vscode.Uri.file(this.mStyleUris.main)).toString())
             .replace('{selectMetadata}', JSON.stringify(d))
             .replace('{dataBindingFilePath}', webview.asWebviewUri(vscode.Uri.file(this.mDataBindingFilePath)).toString());
     }
