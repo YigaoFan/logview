@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { log } from './utils';
-import {AnalyzeResultProvider, AnalyzeResultItem as AnalyzeResultItem} from './AnalyzeResultProvider';
+import { log } from './util';
+import { AnalyzeResultProvider, AnalyzeResultItem as AnalyzeResultItem } from './AnalyzeResultProvider';
 import { patterns } from './pattern';
 import { Message, MessageType } from './message';
 import { QueryPanel } from './QueryPanel';
@@ -10,38 +10,18 @@ import { from } from './linq';
 
 const myScheme = 'logMessage';
 
-const showFilteredMessage = async function(messages: Generator<Message>) {
-	var logs = '';
-	for (const m of messages) {
-		logs += (m.fullLog + '\n');
-	}
-	// log('filtered msg', logs);
-	const uri = vscode.Uri.from({ scheme: myScheme, path: 'QueryResult', fragment: logs, });
-	const doc = await vscode.workspace.openTextDocument(uri);
-	await vscode.languages.setTextDocumentLanguage(doc, 'log');
-	const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.Active);
-};
-
-// TODO change cmd to log view
 // TODO fix: invoke by .log file extension only triggered at first time
 // config and open log folder
 export function activate(context: vscode.ExtensionContext) {
 	// 加一个配置时长的选项
 	log('Congratulations, your extension "logview" is now active!');
-	const templatePath = path.join(context.extensionPath, 'resource', 'panel.html');
-	const styleUris = {
-		main: path.join(context.extensionPath, 'resource', 'media', 'main.css'),
-		vscode: path.join(context.extensionPath, 'resource', 'media', 'vscode.css'),
-		reset: path.join(context.extensionPath, 'resource', 'media', 'reset.css'),
-	};
-	const dataBindingPath = path.join(context.extensionPath, 'resource', 'dataBinding.js');
-	vscode.window.registerWebviewViewProvider('logQueryWebView', 
-		new QueryPanel(templatePath, styleUris, dataBindingPath, new QueryExecutor(), getCurrentFileMessages, showFilteredMessage), 
-		{
-			webviewOptions: {
-				retainContextWhenHidden: true,
-			}
-		});
+	setupQueryPanel(context.extensionPath);
+	setupAnalyzePanel();
+	setupClickContent();
+	setupHoverTip();
+}
+
+const setupAnalyzePanel = function () {
 	const p = new AnalyzeResultProvider(patterns, getCurrentFileMessages);
 	vscode.window.registerTreeDataProvider('logAnalyze', p);
 	const refreshCmd = 'logAnalyze.refresh';
@@ -55,13 +35,76 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 		log('goto', item.lineNum);
-		const workspace = vscode.window.activeTextEditor?.document.uri;// 这个其实应该 result item 携带
+		const workspace = vscode.window.activeTextEditor?.document.uri; // 这个其实应该 result item 携带
 		const p = new vscode.Position(item.lineNum, 0);
 		vscode.commands.executeCommand('editor.action.goToLocations', workspace, p, [], 'goto');
 	};
 	vscode.commands.registerCommand(refreshCmd, refresh);
 	vscode.commands.registerCommand(gotoCmd, goto);
+};
 
+// 这个要某个动作触发最好，不然一开始就显示在那不好
+const setupQueryPanel = function (extensionPath: string) {
+	const templatePath = path.join(extensionPath, 'resource', 'panel.html');
+	const styleUris = {
+		main: path.join(extensionPath, 'resource', 'media', 'main.css'),
+		vscode: path.join(extensionPath, 'resource', 'media', 'vscode.css'),
+		reset: path.join(extensionPath, 'resource', 'media', 'reset.css'),
+	};
+	const dataBindingPath = path.join(extensionPath, 'resource', 'dataBinding.js');
+
+	const showFilteredMessage = async function(messages: Generator<Message>) {
+		var logs = '';
+		for (const m of messages) {
+			logs += (m.fullLog + '\n');
+		}
+		// log('filtered msg', logs);
+		const uri = vscode.Uri.from({ scheme: myScheme, path: 'QueryResult', fragment: logs, });
+		const doc = await vscode.workspace.openTextDocument(uri);
+		await vscode.languages.setTextDocumentLanguage(doc, 'log');
+		const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.Active);
+	};
+	vscode.window.registerWebviewViewProvider('logQueryWebView',
+		new QueryPanel(templatePath, styleUris, dataBindingPath, new QueryExecutor(), getCurrentFileMessages, showFilteredMessage),
+		{
+			webviewOptions: {
+				retainContextWhenHidden: true,
+			}
+		}
+	);
+};
+
+const setupHoverTip = function () {
+	const hoverCache: Record<number, vscode.ProviderResult<vscode.Hover>> = {};
+	const empty = {
+		contents: [],
+	};
+	vscode.languages.registerHoverProvider('log', {
+		provideHover(document, position, token) {
+			// log('position', position.character, position.line);
+			var l = document.lineAt(position.line);
+			if (position.line in hoverCache) {
+				return hoverCache[position.line];
+			}
+			let hoverInfo: vscode.ProviderResult<vscode.Hover> = empty;
+			if (Message.valid(l.text)) {
+				const m = Message.newFrom(l);
+				// format code in MarkdownString
+				hoverInfo = {
+					contents: [`**${m.typeString}**\n` + '```json\n ' + JSON.stringify(JSON.parse(Message.splitOutJsonFrom(l.text)), null, 3) + '\n```',],
+				};
+			} else if (Message.containsJsonObject(l.text)) {
+				hoverInfo = {
+					contents: ['```json\n ' + JSON.stringify(JSON.parse(Message.splitOutJsonFrom(l.text)), null, 3) + '\n```',],
+				};
+			}
+			hoverCache[position.line] = hoverInfo;
+			return hoverInfo;
+		}
+	});
+};
+
+const setupClickContent = function () {
 	var docContentProvider = new class implements vscode.TextDocumentContentProvider {
 		onDidChange?: vscode.Event<vscode.Uri> | undefined;
 		provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): vscode.ProviderResult<string> {
@@ -73,6 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
 		var strs: string[] = [];
 		for (const m of ms) {
 			strs.push(`/*[${m.typeString}]*/`); // // is special char in path
+
 			// 有些 content 不是完整的 JSON，这里会有问题 TODO
 			strs.push(`${JSON.stringify(JSON.parse(m.content.toString()), null, 3)}`);
 		}
@@ -98,42 +142,23 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					}
 				}
-				;
 				const uri = vscode.Uri.from({ scheme: myScheme, path: 'request&response', fragment: messagesToText(...ms), });
 				return new vscode.Location(uri, new vscode.Position(0, 0));
 			}
 			return null;
 		}
 	});
-	vscode.workspace.onDidOpenTextDocument(async doc => {
+	vscode.workspace.onDidOpenTextDocument(async (doc) => {
 		if (doc.isClosed) {
 			return;
 		}
 		if (doc.fileName.startsWith('request&response')) {
 			if (doc.languageId !== 'jsonc') {
-					await vscode.languages.setTextDocumentLanguage(doc, 'jsonc');
+				await vscode.languages.setTextDocumentLanguage(doc, 'jsonc');
 			}
 		}
 	});
-
-	vscode.languages.registerHoverProvider('log', {
-		provideHover(document, position, token) {
-			// log('position', position.character, position.line);
-			var l = document.lineAt(position.line);
-			if (Message.valid(l.text)) {
-				var m = Message.newFrom(l);
-				
-				return {
-					// format code in MarkdownString
-					contents: [`**${m.typeString}**\n` + '```json\n ' + JSON.stringify(JSON.parse(m.content.toString()), null, 3) + '\n```',],
-				};
-			}
-			return {
-				contents: [],
-			};
-		}
-	});
-}
+};
 
 function* getCurrentFileContent(): Generator<vscode.TextLine> {
 	const editor = vscode.window.activeTextEditor;
@@ -151,6 +176,7 @@ function getCurrentFileMessages(): Generator<Message> {
 	const ms = from(g).filter(x => Message.valid(x.text)).map(x => Message.newFrom(x));
 	return ms.raw;
 }
+
 // this method is called when your extension is deactivated
 export function deactivate() { }
 

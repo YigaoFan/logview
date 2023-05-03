@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { CancellationToken, Uri, WebviewView, WebviewViewProvider, WebviewViewResolveContext } from "vscode";
 import * as fs from 'fs';
-import { log } from "./utils";
+import { log } from "./util";
 import { Clause, Combinator, getCombinatorMap as getCombinators, getOperators as getOperators, QueryExecutor, toCombinatorEnum, toOperatorEnum } from "./QueryExecutor";
 import { Message } from './message';
 import { from } from './linq';

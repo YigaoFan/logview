@@ -1,5 +1,5 @@
 import { Message } from "./message";
-import { log } from "./utils";
+import { log } from "./util";
 
 export enum Operator {
     equal = 'equal',

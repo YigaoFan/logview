@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { log } from './utils';
+import { log } from './util';
 import { IPattern } from './pattern';
 import { Message } from './message';
 

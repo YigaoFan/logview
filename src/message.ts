@@ -1,10 +1,11 @@
 import { TextLine } from "vscode";
 import { Operator } from "./QueryExecutor";
-import { log, JSONValue } from "./utils";
+import { log, JSONValue } from "./util";
 
 export enum MessageType {
     request,
     response,
+    jsonLine,
 }
 
 /** 
@@ -25,6 +26,16 @@ export class Message {
         return message.includes('[response]');
     }
 
+    public static containsJsonObject(message: string): boolean {
+        const l = message.indexOf('{');
+        if (l === -1) {
+            return false;
+        }
+        const r = message.lastIndexOf('}');
+        // log('left', l, 'right', r);
+        return l < r;
+    }
+
     public static valid(message: string) {
         return this.isRequest(message) || this.isResponse(message);
     }
@@ -36,11 +47,11 @@ export class Message {
     public static newFrom(line: TextLine): Message {
         const l = line;
         if (Message.isRequest(l.text)) {
-            const request:string = Message.splitOutJsonFrom(l.text);
+            const request: string = Message.splitOutJsonFrom(l.text);
             const time = Message.splitOutTime(l.text);
             return new Message(time, l.lineNumber, MessageType.request, request, l.text);
         } else if (Message.isResponse(l.text)) {
-            const response:string = Message.splitOutJsonFrom(l.text);
+            const response: string = Message.splitOutJsonFrom(l.text);
             const time = Message.splitOutTime(l.text);
             return new Message(time, l.lineNumber, MessageType.response, response, l.text);
         }
@@ -133,7 +144,7 @@ export class Message {
         this.mLog = log;
     }
 
-    private static splitOutJsonFrom(line: string) {
+    public static splitOutJsonFrom(line: string) {
         const start = line.indexOf('{');
         const end = line.lastIndexOf('}');
         if (end === -1) {

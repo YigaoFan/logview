@@ -15,8 +15,6 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onLanguage:log",
-		"onView:logAnalyze"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
