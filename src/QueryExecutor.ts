@@ -7,6 +7,10 @@ export enum Operator {
     contains = 'contains',
 }
 
+interface IVerify {
+    verify(fieldName: string, operator: Operator, value: string): boolean;
+}
+
 export enum Combinator {
     and = 1,
     or = 0,
@@ -51,7 +55,7 @@ class QueryItem {
     public constructor(private clause: Clause | boolean, public validRange: [number, number]/* left, right is included */) {
     }
 
-    public executeOn(message: Message): boolean {
+    public executeOn<T extends IVerify>(message: T): boolean {
         // log('QueryItem execute', this.clause);
         if (this.clause instanceof Array) {
             const result = message.verify(this.clause[0], this.clause[1], this.clause[2]);
@@ -95,7 +99,7 @@ export class QueryExecutor {
         this.mCombinators.push(combinator);
     }
 
-    public *execute(messages: Generator<Message>): Generator<Message> {
+    public *execute<T extends IVerify>(messages: Generator<T>): Generator<T> {
         const exeOrder: [Combinator, number][] = [[Combinator.lowestOrderGuard, -1],];// exe order from high to low
         for (let i = 0; i < this.mCombinators.length; i++) {
             const x = this.mCombinators[i];
@@ -110,7 +114,7 @@ export class QueryExecutor {
         exeOrder.pop(); // remove the lowest guard
         
         const that = this;
-        const query = function(msg: Message): boolean {
+        const query = function(msg: T): boolean {
             // args will be changed internal(executeOn), so we need use a copy in each query
             const args = that.mClauses.map((x, i) => new QueryItem(x, [i, i]));
             for (const exe of exeOrder) {
